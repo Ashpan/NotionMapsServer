@@ -2,8 +2,9 @@
 const express = require('express')
 const cors = require('cors');
 const axios = require('axios')
-require('dotenv').config();
+
 const { getDatabaseOptions, getMapOptions, patchDatabaseOptions } = require('./endpointOptions');
+require('dotenv').config();
 
 const app = express()
 app.use(cors());
@@ -51,7 +52,6 @@ app.get('/locations', (req, res) => {
           }
           locations.push(locationMetadata);
         }
-        res.send("unfinishedLocations");
         for (const location of unfinishedLocations) {
           axios.request(getMapOptions(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content))
           .then(function (response) {
@@ -90,7 +90,7 @@ app.get('/locations', (req, res) => {
             console.error(error);
           });
         }
-        // res.send(locations);
+        res.send(locations);
       })
       .catch(function (error) {
         console.error(error);
