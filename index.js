@@ -1,6 +1,7 @@
 // index.js
 const express = require('express')
-
+const { NOTION_API_KEY, GOOGLE_MAPS_API_KEY } = process.env;
+console.log('NOTION_API_KEY', NOTION_API_KEY)
 const app = express()
 const PORT = 4000
 
