@@ -1,15 +1,15 @@
 require('dotenv').config();
 
-const getDatabaseOptions = {
+const getDatabaseOptions = (databaseId) => ({
     method: 'POST',
-    url: 'https://api.notion.com/v1/databases/7eef035b-dfa2-4cc0-9131-734e8dc8414d/query',
+    url: `https://api.notion.com/v1/databases/${databaseId}/query`,
     headers: {
         accept: 'application/json',
         'Authorization': `Bearer ${process.env.NOTION_API_KEY}`,
         'Notion-Version': '2022-06-28',
         'content-type': 'application/json'
     },
-};
+});
 
 const getMapOptions = (address) => ({
     method: 'GET',

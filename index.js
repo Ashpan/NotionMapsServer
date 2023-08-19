@@ -1,9 +1,12 @@
 // index.js
 const express = require('express')
+const cors = require('cors');
 const axios = require('axios')
+require('dotenv').config();
 const { getDatabaseOptions, getMapOptions, patchDatabaseOptions } = require('./endpointOptions');
 
 const app = express()
+app.use(cors());
 const PORT = 4000
 
 app.listen(PORT, () => {
@@ -14,12 +17,16 @@ app.get('/', (req, res) => {
   res.send('Hey this is my API running 🥳')
 })
 
+app.get('/dontuse', (req, res) => {
+    res.send(process.env.TEST)
+})
+
 app.get('/locations', (req, res) => {
     const locations = [];
     const unfinishedLocations = [];
     let databaseId = req.query.databaseId;
 
-    axios.request(getDatabaseOptions)
+    axios.request(getDatabaseOptions(databaseId))
       .then(function async (response) {
         for (const location of response.data.results) {
           // Add location to unfinishedLocations if it doesn't have a latitude or longitude
@@ -44,7 +51,7 @@ app.get('/locations', (req, res) => {
           }
           locations.push(locationMetadata);
         }
-
+        res.send("unfinishedLocations");
         for (const location of unfinishedLocations) {
           axios.request(getMapOptions(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content))
           .then(function (response) {
@@ -83,7 +90,7 @@ app.get('/locations', (req, res) => {
             console.error(error);
           });
         }
-        res.send(locations);
+        // res.send(locations);
       })
       .catch(function (error) {
         console.error(error);
