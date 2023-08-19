@@ -60,8 +60,9 @@ app.get('/locations', (req, res) => {
         locations.push(locationMetadata);
       }
       for (const location of unfinishedLocations) {
-        axiosInstance.request(getMapOptions(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content))
+        axiosInstance.request(getMapOptions(encodeURIComponent(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content)))
           .then(function (response) {
+            console.log(response.data)
             const { lat, lng } = response.data.results[0].geometry.location;
             const numOfResults = response.data.results.length;
             const relevantResult = response.data.results[numOfResults - 1];
