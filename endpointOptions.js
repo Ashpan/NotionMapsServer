@@ -11,12 +11,17 @@ const getDatabaseOptions = (databaseId) => ({
     },
 });
 
+// const getMapOptions = (address) => ({
+//     method: 'GET',
+//     url: `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+// });
+
 const getMapOptions = (address) => ({
     method: 'GET',
-    url: `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+    url: `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${address}&inputtype=textquery&fields=name,geometry,price_level,rating,place_id&key=${process.env.GOOGLE_MAPS_API_KEY}`,
 });
 
-const patchDatabaseOptions = (pageId, lat, long, url) => ({
+const patchDatabaseOptions = (pageId, lat, long, price, rating, url) => ({
     method: 'PATCH',
     url: `https://api.notion.com/v1/pages/${pageId}`,
     headers: {
@@ -31,7 +36,9 @@ const patchDatabaseOptions = (pageId, lat, long, url) => ({
         "properties": {
             "Latitude": lat,
             "Longitude": long,
-            "Maps Link": url
+            "Maps Link": url,
+            "Price": price,
+            "Rating": rating
         }
     }
 });

@@ -54,6 +54,8 @@ app.get('/locations', (req, res) => {
           long: parseFloat(location.properties.Longitude.number),
           name: location.properties.Name.title[0].text.content,
           type: location.properties.Type.multi_select.map((type) => type.name),
+          price: location.properties.Price.number,
+          rating: location.properties.Rating.number,
           notes: notes,
           url: location.properties["Maps Link"].url
         };
@@ -62,15 +64,16 @@ app.get('/locations', (req, res) => {
       for (const location of unfinishedLocations) {
         axiosInstance.request(getMapOptions(encodeURIComponent(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content)))
           .then(function (response) {
-            console.log(response.data)
-            const { lat, lng } = response.data.results[0].geometry.location;
-            const numOfResults = response.data.results.length;
-            const relevantResult = response.data.results[numOfResults - 1];
+            const responseJSON = response.data.candidates[0];
+            const { lat, lng } = responseJSON.geometry.location;
+            const price = responseJSON.price_level || 0;
+            const rating = responseJSON.rating;
+            const placeId = responseJSON.place_id;
             const pageId = location.id;
             let url;
             let notes;
             try {
-              url = `https://www.google.com/maps/place/?q=place_id:${relevantResult.place_id}`;
+              url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
             } catch (error) {
               url = `https://www.google.com/maps?q=${lat},${lng}`;
             }
@@ -79,11 +82,13 @@ app.get('/locations', (req, res) => {
             } catch (error) {
               notes = '-';
             }
-            axiosInstance.request(patchDatabaseOptions(pageId, lat, lng, url))
+            axiosInstance.request(patchDatabaseOptions(pageId, lat, lng, price, rating, url))
               .then(function (response) {
                 const locationMetadata = {
                   lat: lat,
                   long: lng,
+                  price: price,
+                  rating: rating,
                   name: location.properties.Name.title[0].plain_text,
                   type: location.properties.Type.multi_select.map((type) => type.name),
                   notes: notes,
