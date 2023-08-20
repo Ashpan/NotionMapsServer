@@ -56,6 +56,7 @@ app.get('/locations', (req, res) => {
           type: location.properties.Type.multi_select.map((type) => type.name),
           price: location.properties.Price.number,
           rating: location.properties.Rating.number,
+          cuisine: location.properties.Cuisine.multi_select.map((cuisine) => cuisine.name),
           notes: notes,
           url: location.properties["Maps Link"].url
         };
@@ -91,6 +92,7 @@ app.get('/locations', (req, res) => {
                   rating: rating,
                   name: location.properties.Name.title[0].plain_text,
                   type: location.properties.Type.multi_select.map((type) => type.name),
+                  cuisine: location.properties.Cuisine.multi_select.map((cuisine) => cuisine.name),
                   notes: notes,
                   url: url
                 };
