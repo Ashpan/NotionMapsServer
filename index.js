@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
-const { getDatabaseOptions, getMapOptions, patchDatabaseOptions } = require('./endpointOptions');
+const { getDatabaseOptions, getMapOptions, getMapPlaceIdOptions, patchDatabaseOptions } = require('./endpointOptions');
 require('dotenv').config();
 
 const app = express();
@@ -63,54 +63,56 @@ app.get('/locations', (req, res) => {
         locations.push(locationMetadata);
       }
       for (const location of unfinishedLocations) {
-        axiosInstance.request(getMapOptions(encodeURIComponent(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content)))
+        axiosInstance.request(getMapPlaceIdOptions(encodeURIComponent(location.properties.Name.title[0].plain_text + ", " + location.properties.Address.rich_text[0].text.content)))
           .then(function (response) {
-            const responseJSON = response.data.candidates[0];
-            const { lat, lng } = responseJSON.geometry.location;
-            const price = responseJSON.price_level || 0;
-            const rating = responseJSON.rating;
-            const placeId = responseJSON.place_id;
-            const pageId = location.id;
-            let url;
-            let notes;
-            try {
-              url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
-            } catch (error) {
-              url = `https://www.google.com/maps?q=${lat},${lng}`;
-            }
-            try {
-              notes = location.properties.Notes.rich_text[0].text.content;
-            } catch (error) {
-              notes = '-';
-            }
-            axiosInstance.request(patchDatabaseOptions(pageId, lat, lng, price, rating, url))
-              .then(function (response) {
-                const locationMetadata = {
-                  lat: lat,
-                  long: lng,
-                  price: price,
-                  rating: rating,
-                  name: location.properties.Name.title[0].plain_text,
-                  type: location.properties.Type.multi_select.map((type) => type.name),
-                  cuisine: location.properties.Cuisine.multi_select.map((cuisine) => cuisine.name),
-                  notes: notes,
-                  url: url
-                };
-                locations.push(locationMetadata);
+            axiosInstance.request(getMapOptions(response.data.candidates[0].place_id))
+            .then(function (response) {
+                const responseJSON = response.data.result;
+                const { lat, lng } = responseJSON.geometry.location;
+                const price = responseJSON.price_level || 0;
+                const rating = responseJSON.rating;
+                const pageId = location.id;
+                const url = responseJSON.url;
+                let notes;
+                try {
+                  notes = location.properties.Notes.rich_text[0].text.content;
+                } catch (error) {
+                  notes = '-';
+                }
+                axiosInstance.request(patchDatabaseOptions(pageId, lat, lng, price, rating, url))
+                  .then(function (response) {
+                    const locationMetadata = {
+                      lat: lat,
+                      long: lng,
+                      price: price,
+                      rating: rating,
+                      name: location.properties.Name.title[0].plain_text,
+                      type: location.properties.Type.multi_select.map((type) => type.name),
+                      cuisine: location.properties.Cuisine.multi_select.map((cuisine) => cuisine.name),
+                      notes: notes,
+                      url: url
+                    };
+                    locations.push(locationMetadata);
+                  }).catch(function (error) {
+                    console.error(error);
+                    res.status(500).send("Error occurred while patching database");
+                  });
               }).catch(function (error) {
                 console.error(error);
+                res.status(500).send("Error occurred while fetching place details");
               });
-
-          }).catch(function (error) {
+          })
+          .catch(function (error) {
             console.error(error);
+            res.status(500).send("Error occurred while fetching place ID");
           });
       }
       res.send(locations);
     })
     .catch(function (error) {
       console.error(error);
+      res.status(500).send("Error occurred while fetching database options");
     });
 });
 
-// Export the Express API
 module.exports = app;

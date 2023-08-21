@@ -16,9 +16,14 @@ const getDatabaseOptions = (databaseId) => ({
 //     url: `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.GOOGLE_MAPS_API_KEY}`,
 // });
 
-const getMapOptions = (address) => ({
+const getMapPlaceIdOptions = (address) => ({
     method: 'GET',
-    url: `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${address}&inputtype=textquery&fields=name,geometry,price_level,rating,place_id&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+    url: `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${address}&inputtype=textquery&fields=place_id&key=${process.env.GOOGLE_MAPS_API_KEY}`,
+});
+
+const getMapOptions = (placeId) => ({
+    method: 'GET',
+    url: `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,geometry,price_level,rating,url&key=${process.env.GOOGLE_MAPS_API_KEY}`
 });
 
 const patchDatabaseOptions = (pageId, lat, long, price, rating, url) => ({
@@ -46,5 +51,6 @@ const patchDatabaseOptions = (pageId, lat, long, price, rating, url) => ({
 module.exports = {
     getDatabaseOptions,
     getMapOptions,
+    getMapPlaceIdOptions,
     patchDatabaseOptions
 }
