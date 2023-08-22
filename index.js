@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
-const { getDatabaseOptions, getMapOptions, getMapPlaceIdOptions, patchDatabaseOptions } = require('./endpointOptions');
+const { getDatabaseOptions, getMapOptions, getMapPlaceIdOptions, patchDatabaseOptions, getDatabaseConfigOptions } = require('./endpointOptions');
 require('dotenv').config();
 
 const app = express();
@@ -20,6 +20,27 @@ app.get('/', (req, res) => {
 
 app.get('/dontuse', (req, res) => {
   res.send(process.env.TEST);
+});
+
+app.get('/filters', (req, res) => {
+  let databaseId = req.query.databaseId;
+  const axiosInstance = axios.create({
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  });
+  axiosInstance.request(getDatabaseConfigOptions(databaseId))
+    .then(function (response) {
+      const cuisineOptions = response.data.properties.Cuisine.multi_select.options.map((option) => option.name);
+      const typeOptions = response.data.properties.Type.multi_select.options.map((option) => option.name);
+      res.send({cuisine: cuisineOptions, type: typeOptions});
+    })
+    .catch(function (error) {
+      console.error(error);
+      res.status(500).send("Error occurred while fetching database config options");
+    });
 });
 
 app.get('/locations', (req, res) => {

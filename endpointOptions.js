@@ -11,6 +11,16 @@ const getDatabaseOptions = (databaseId) => ({
     },
 });
 
+const getDatabaseConfigOptions = (databaseId) => ({
+    method: 'GET',
+    url: `https://api.notion.com/v1/databases/${databaseId}`,
+    headers: {
+        accept: 'application/json',
+        'Authorization': `Bearer ${process.env.NOTION_API_KEY}`,
+        'Notion-Version': '2022-06-28',
+        'content-type': 'application/json'
+    },
+});
 // const getMapOptions = (address) => ({
 //     method: 'GET',
 //     url: `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${process.env.GOOGLE_MAPS_API_KEY}`,
@@ -50,6 +60,7 @@ const patchDatabaseOptions = (pageId, lat, long, price, rating, url) => ({
 
 module.exports = {
     getDatabaseOptions,
+    getDatabaseConfigOptions,
     getMapOptions,
     getMapPlaceIdOptions,
     patchDatabaseOptions
