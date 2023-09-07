@@ -14,7 +14,7 @@ const setUserNotionSecretOptions = (temporaryCode) => ({
   data: {
     grant_type: "authorization_code",
     code: temporaryCode,
-    redirect_uri: process.env.REDIRECT_URL,
+    redirect_uri: "https://notion-maps-git-refactor-auth-ashpan.vercel.app/notion-callback",
   },
 });
 
