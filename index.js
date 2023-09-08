@@ -74,7 +74,6 @@ app.post("/token", async (req, res) => {
     axiosInstance
       .request(setUserNotionSecretOptions(req.body.code))
       .then(async function (response) {
-        console.log({ response });
         const access_token = response.data.access_token;
         const { error: insertError } = await db.from("user_keys").insert({
           user_id: userId,
@@ -125,7 +124,7 @@ app.get("/filters", async (req, res) => {
         res.send({ cuisine: cuisineOptions, type: typeOptions });
       })
       .catch(function (error) {
-        // console.error(error);
+        console.error(error);
         res
           .status(500)
           .send("Error occurred while fetching database config options");
@@ -188,7 +187,6 @@ app.get("/locations", async (req, res) => {
           locations.push(locationMetadata);
         }
         for (const location of unfinishedLocations) {
-          console.log(unfinishedLocations.properties);
           axiosInstance
             .request(
               getMapPlaceIdOptions(
