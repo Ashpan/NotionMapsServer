@@ -187,8 +187,8 @@ app.get("/locations", async (req, res) => {
           };
           locations.push(locationMetadata);
         }
-        console.log({unfinishedLocations});
         for (const location of unfinishedLocations) {
+          console.log(JSON.stringify(unfinishedLocations));
           axiosInstance
             .request(
               getMapPlaceIdOptions(
