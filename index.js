@@ -156,6 +156,7 @@ app.get("/locations", async (req, res) => {
       .then(function async(response) {
         for (const location of response.data.results) {
           // Add location to unfinishedLocations if it doesn't have a latitude or longitude
+          console.log(JSON.stringify(location));
           if (
             location.properties.Latitude.number === null ||
             location.properties.Longitude.number === null
