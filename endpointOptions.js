@@ -14,11 +14,12 @@ const setUserNotionSecretOptions = (temporaryCode) => ({
   data: {
     grant_type: "authorization_code",
     code: temporaryCode,
-    redirect_uri: "https://notion-maps-git-refactor-auth-ashpan.vercel.app/notion-callback",
+    redirect_uri:
+      "https://notion-maps-git-refactor-auth-ashpan.vercel.app/notion-callback",
   },
 });
 
-const getDatabaseOptions = (databaseId, apiKey) => ({
+const getIncompleteDatabaseOptions = (databaseId, apiKey) => ({
   method: "POST",
   url: `https://api.notion.com/v1/databases/${databaseId}/query`,
   headers: {
@@ -26,6 +27,57 @@ const getDatabaseOptions = (databaseId, apiKey) => ({
     Authorization: `Bearer ${apiKey}`,
     "Notion-Version": "2022-06-28",
     "content-type": "application/json",
+  },
+  data: {
+    filter: {
+      or: [
+        {
+          property: "Latitude",
+          number: {
+            is_empty: true,
+          },
+        },
+        {
+          property: "Longitude",
+          number: {
+            is_empty: true,
+          },
+        },
+        {
+          property: "Maps Link",
+          url: {
+            is_empty: true,
+          },
+        },
+        {
+          property: "Price",
+          number: {
+            is_empty: true,
+          },
+        },
+        {
+          property: "Rating",
+          number: {
+            is_empty: true,
+          },
+        },
+      ],
+    },
+  },
+});
+
+const getDatabaseOptions = (databaseId, apiKey, nextCursor=undefined) => ({
+  method: "POST",
+  url: `https://api.notion.com/v1/databases/${databaseId}/query`,
+  headers: {
+    accept: "application/json",
+    Authorization: `Bearer ${apiKey}`,
+    "Notion-Version": "2022-06-28",
+    "content-type": "application/json",
+  },
+  data: {
+    page_size: 100,
+    start_cursor: nextCursor
   },
 });
 
@@ -50,7 +102,15 @@ const getMapOptions = (placeId) => ({
   url: `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,geometry,price_level,rating,url&key=${process.env.GOOGLE_MAPS_API_KEY}`,
 });
 
-const patchDatabaseOptions = (pageId, lat, long, price, rating, url, apiKey) => ({
+const patchDatabaseOptions = (
+  pageId,
+  lat,
+  long,
+  price,
+  rating,
+  url,
+  apiKey
+) => ({
   method: "PATCH",
   url: `https://api.notion.com/v1/pages/${pageId}`,
   headers: {
@@ -74,6 +134,7 @@ const patchDatabaseOptions = (pageId, lat, long, price, rating, url, apiKey) => 
 module.exports = {
   setUserNotionSecretOptions,
   getDatabaseOptions,
+  getIncompleteDatabaseOptions,
   getDatabaseConfigOptions,
   getMapOptions,
   getMapPlaceIdOptions,
