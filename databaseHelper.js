@@ -17,6 +17,25 @@ const getUserApiKeyDatabaseId = async (db, userId) => {
   }
 };
 
+const getUserFilters = async (db, userId) => {
+  const { data: userToken, error } = await db
+  .from("user_keys")
+  .select()
+  .eq("user_id", userId);
+if (error) {
+  console.error(error);
+  return null;
+}
+if (userToken.length === 0) {
+  return null;
+} else {
+  return {
+    filters: JSON.parse(userToken[0].filters),
+  };
+}
+};
+
 module.exports = {
   getUserApiKeyDatabaseId,
+  getUserFilters
 };

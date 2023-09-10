@@ -12,7 +12,7 @@ const {
   setUserNotionSecretOptions,
   getIncompleteDatabaseOptions,
 } = require("./endpointOptions");
-const { getUserApiKeyDatabaseId } = require("./databaseHelper");
+const { getUserApiKeyDatabaseId, getUserFilters } = require("./databaseHelper");
 require("dotenv").config();
 
 const app = express();
@@ -87,6 +87,7 @@ app.post("/token", async (req, res) => {
 app.get("/filters", async (req, res) => {
   const userId = req.query.userId;
   const userData = await getUserApiKeyDatabaseId(db, userId);
+  const { filters } = await getUserFilters(db, userId);
   if (!userData) {
     res.status(500).send("Error occurred while fetching user token");
     return;
@@ -102,15 +103,15 @@ app.get("/filters", async (req, res) => {
     axiosInstance
       .request(getDatabaseConfigOptions(databaseId, apiKey))
       .then(function (response) {
-        const cuisineOptions =
-          response.data.properties.Cuisine.multi_select.options.map(
-            (option) => option.name
-          );
-        const typeOptions =
-          response.data.properties.Type.multi_select.options.map(
-            (option) => option.name
-          );
-        res.send({ cuisine: cuisineOptions, type: typeOptions });
+        const processedFilters = {};
+        filters.map((filter) => {
+          const filterOptions =
+            response.data.properties[filter].multi_select.options.map(
+              (option) => option.name
+            );
+          processedFilters[filter] = filterOptions;
+        });
+        res.send(processedFilters);
       })
       .catch(function (error) {
         console.error(error);
@@ -154,6 +155,10 @@ app.get("/locations", async (req, res) => {
               )
             )
             .then(function (response) {
+              // if the response.data.status is not OK, skip this value
+              if (response.data.status !== "OK") {
+                return;
+              }
               axiosInstance
                 .request(getMapOptions(response.data.candidates[0].place_id))
                 .then(function (response) {
@@ -204,11 +209,13 @@ app.get("/locations", async (req, res) => {
       .then(async function () {
         let locations = [];
         let nextCursor = undefined;
+        const { filters } = await getUserFilters(db, userId);
 
         do {
           const response = await axiosInstance.request(
             getDatabaseOptions(databaseId, apiKey, nextCursor)
           );
+
 
           const responseData = response.data;
           nextCursor = responseData.next_cursor;
@@ -230,19 +237,19 @@ app.get("/locations", async (req, res) => {
             name: location.properties.Name.title[0].text.content,
             lat: parseFloat(location.properties.Latitude.number),
             long: parseFloat(location.properties.Longitude.number),
-            type: location.properties.Type.multi_select.map(
-              (type) => type.name
-            ),
             price: location.properties.Price.number,
             rating: location.properties.Rating.number,
-            cuisine: location.properties.Cuisine.multi_select.map(
-              (cuisine) => cuisine.name
-            ),
+
             notes: notes,
             url: location.properties["Maps Link"].url,
           };
+          filters.map((filter) => {
+            locationMetadata[filter] = location.properties[filter].multi_select.map(
+              (option) => option.name
+            );
+          });
         } catch (error) {
-          console.error(location);
+          console.error(error);
           res
             .status(500)
             .send("Error occurred while fetching incomplete database options");
