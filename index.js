@@ -12,7 +12,7 @@ const {
   setUserNotionSecretOptions,
   getIncompleteDatabaseOptions,
 } = require("./endpointOptions");
-const { getUserApiKeyDatabaseId, getUserFilters } = require("./databaseHelper");
+const { getUserApiKeyDatabaseId, getUserFilters, getColNames } = require("./databaseHelper");
 require("dotenv").config();
 
 const app = express();
@@ -125,6 +125,7 @@ app.get("/filters", async (req, res) => {
 app.get("/locations", async (req, res) => {
   const userId = req.query.userId;
   const userData = await getUserApiKeyDatabaseId(db, userId);
+  const columnsNames = await getColNames(db, userId);
   if (!userData) {
     res.status(500).send("Error occurred while fetching user token");
     return;
@@ -140,7 +141,7 @@ app.get("/locations", async (req, res) => {
     const formattedLocations = [];
 
     axiosInstance
-      .request(getIncompleteDatabaseOptions(databaseId, apiKey))
+      .request(getIncompleteDatabaseOptions(databaseId, apiKey, columnsNames))
       .then(function async(response) {
         const incompleteLocations = response.data.results;
         for (const location of incompleteLocations) {
@@ -222,26 +223,26 @@ app.get("/locations", async (req, res) => {
           locations = [...locations, ...responseData.results];
         } while (nextCursor);
         for (const location of locations) {
+          if (location.properties === undefined) {
+            continue;
+          }
           let notes;
           try {
-            notes = location.properties.Notes.rich_text[0].text.content;
+            notes = location.properties[columnsNames.notes].rich_text[0].text.content;
           } catch (error) {
             notes = "-";
           }
           let locationMetadata;
-          if (location.properties === undefined) {
-            continue;
-          }
           try{
           locationMetadata = {
-            name: location.properties.Name.title[0].text.content,
-            lat: parseFloat(location.properties.Latitude.number),
-            long: parseFloat(location.properties.Longitude.number),
-            price: location.properties.Price.number,
-            rating: location.properties.Rating.number,
+            name: location.properties[columnsNames.name].title[0].text.content,
+            lat: parseFloat(location.properties[columnsNames.latitude].number),
+            long: parseFloat(location.properties[columnsNames.longitude].number),
+            price: location.properties[columnsNames.price].number,
+            rating: location.properties[columnsNames.rating].number,
 
             notes: notes,
-            url: location.properties["Maps Link"].url,
+            url: location.properties[columnsNames.mapsLink].url,
           };
           filters.map((filter) => {
             locationMetadata[filter] = location.properties[filter].multi_select.map(

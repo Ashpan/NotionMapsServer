@@ -19,7 +19,7 @@ const setUserNotionSecretOptions = (temporaryCode) => ({
   },
 });
 
-const getIncompleteDatabaseOptions = (databaseId, apiKey) => ({
+const getIncompleteDatabaseOptions = (databaseId, apiKey, columnsNames) => ({
   method: "POST",
   url: `https://api.notion.com/v1/databases/${databaseId}/query`,
   headers: {
@@ -32,31 +32,31 @@ const getIncompleteDatabaseOptions = (databaseId, apiKey) => ({
     filter: {
       or: [
         {
-          property: "Latitude",
+          property: columnsNames.latitude,
           number: {
             is_empty: true,
           },
         },
         {
-          property: "Longitude",
+          property: columnsNames.longitude,
           number: {
             is_empty: true,
           },
         },
         {
-          property: "Maps Link",
+          property: columnsNames.mapsLink,
           url: {
             is_empty: true,
           },
         },
         {
-          property: "Price",
+          property: columnsNames.price,
           number: {
             is_empty: true,
           },
         },
         {
-          property: "Rating",
+          property: columnsNames.rating,
           number: {
             is_empty: true,
           },
