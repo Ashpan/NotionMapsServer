@@ -28,6 +28,10 @@ if (error) {
 }
 if (userToken.length === 0) {
   return null;
+} else if (!userToken[0].filters) {
+  return {
+    filters: [],
+  };
 } else {
   return {
     filters: JSON.parse(userToken[0].filters),
