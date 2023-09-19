@@ -145,6 +145,12 @@ app.get("/locations", async (req, res) => {
       .then(function async(response) {
         const incompleteLocations = response.data.results;
         for (const location of incompleteLocations) {
+          if (location.properties === undefined) {
+            continue;
+          }
+          if (location.properties.Address.rich_text[0].text.content === "" || location.properties.Name.title[0].plain_text === "") {
+            continue;
+          }
           axiosInstance
             .request(
               getMapPlaceIdOptions(
