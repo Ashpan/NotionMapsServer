@@ -12,7 +12,13 @@ const {
   setUserNotionSecretOptions,
   getIncompleteDatabaseOptions,
 } = require("./endpointOptions");
-const { getUserApiKeyDatabaseId, getUserFilters, getColNames } = require("./databaseHelper");
+const {
+  getUserApiKeyDatabaseId,
+  getUserFilters,
+  getColNames,
+  getFilterChoices,
+  getLocationFilterChoices,
+} = require("./databaseHelper");
 require("dotenv").config();
 
 const app = express();
@@ -105,11 +111,8 @@ app.get("/filters", async (req, res) => {
       .then(function (response) {
         const processedFilters = {};
         filters.map((filter) => {
-          const filterOptions =
-            response.data.properties[filter].multi_select.options.map(
-              (option) => option.name
-            );
-          processedFilters[filter] = filterOptions;
+          const filterProperties = response.data.properties[filter];
+          processedFilters[filter] = getFilterChoices(filterProperties.type, filterProperties);
         });
         res.send(processedFilters);
       })
@@ -126,6 +129,8 @@ app.get("/locations", async (req, res) => {
   const userId = req.query.userId;
   const userData = await getUserApiKeyDatabaseId(db, userId);
   const columnsNames = await getColNames(db, userId);
+  const { data: colourRes, error } = await db.from("user_keys").select("colours").eq("user_id", userId);
+  const colours = colourRes[0].colours
   if (!userData) {
     res.status(500).send("Error occurred while fetching user token");
     return;
@@ -148,16 +153,19 @@ app.get("/locations", async (req, res) => {
           if (location.properties === undefined) {
             continue;
           }
-          if (location.properties.Address.rich_text[0].text.content === "" || location.properties.Name.title[0].plain_text === "") {
+          if (
+            location.properties[columnsNames.address].rich_text[0].text.content === "" ||
+            location.properties[columnsNames.name].title[0].plain_text === ""
+          ) {
             continue;
           }
           axiosInstance
             .request(
               getMapPlaceIdOptions(
                 encodeURIComponent(
-                  location.properties.Name.title[0].plain_text +
+                  location.properties[columnsNames.name].title[0].plain_text +
                     ", " +
-                    location.properties.Address.rich_text[0].text.content
+                    location.properties[columnsNames.address].rich_text[0].text.content
                 )
               )
             )
@@ -223,7 +231,6 @@ app.get("/locations", async (req, res) => {
             getDatabaseOptions(databaseId, apiKey, nextCursor)
           );
 
-
           const responseData = response.data;
           nextCursor = responseData.next_cursor;
           locations = [...locations, ...responseData.results];
@@ -234,34 +241,41 @@ app.get("/locations", async (req, res) => {
           }
           let notes;
           try {
-            notes = location.properties[columnsNames.notes].rich_text[0].text.content;
+            notes =
+              location.properties[columnsNames.notes].rich_text[0].text.content;
           } catch (error) {
             notes = "-";
           }
           let locationMetadata;
-          try{
-          locationMetadata = {
-            name: location.properties[columnsNames.name].title[0].text.content,
-            lat: parseFloat(location.properties[columnsNames.latitude].number),
-            long: parseFloat(location.properties[columnsNames.longitude].number),
-            price: location.properties[columnsNames.price].number,
-            rating: location.properties[columnsNames.rating].number,
+          try {
+            locationMetadata = {
+              name: location.properties[columnsNames.name].title[0].text
+                .content,
+              lat: parseFloat(
+                location.properties[columnsNames.latitude].number
+              ),
+              long: parseFloat(
+                location.properties[columnsNames.longitude].number
+              ),
+              price: location.properties[columnsNames.price].number,
+              rating: location.properties[columnsNames.rating].number,
 
-            notes: notes,
-            url: location.properties[columnsNames.mapsLink].url,
-          };
-          filters.map((filter) => {
-            locationMetadata[filter] = location.properties[filter].multi_select.map(
-              (option) => option.name
-            );
-          });
-        } catch (error) {
-          console.error(error);
-          res
-            .status(500)
-            .send("Error occurred while fetching incomplete database options");
+              notes: notes,
+              url: location.properties[columnsNames.mapsLink].url,
+            };
+            filters.map((filter) => {
+              const filterProperties = location.properties[filter];
+              locationMetadata[filter] = getLocationFilterChoices(filterProperties.type, filterProperties, filter, colours[filter]);
+            });
+          } catch (error) {
+            console.error(error);
+            res
+              .status(500)
+              .send(
+                "Error occurred while fetching incomplete database options"
+              );
             return;
-        }
+          }
           formattedLocations.push(locationMetadata);
         }
         res.send(formattedLocations);
