@@ -94,7 +94,7 @@ const getLocationFilterChoices = (type, filterProperties, filter, colours) => {
         } else {
           return {
             name: option.name,
-            colour: "red",
+            colour: "default",
           };
         }
       });
@@ -113,7 +113,7 @@ const getLocationFilterChoices = (type, filterProperties, filter, colours) => {
         return [
           {
             name: filterProperties.select.name,
-            colour: "red",
+            colour: "default",
           },
         ];
       }
@@ -126,7 +126,7 @@ const getLocationFilterChoices = (type, filterProperties, filter, colours) => {
           },
         ];
       }
-      return filterProperties.checkbox === true ? [{name: `${filter}`, colour: "red"}] : [];
+      return filterProperties.checkbox === true ? [{name: `${filter}`, colour: "default"}] : [];
     default:
       return;
   }
